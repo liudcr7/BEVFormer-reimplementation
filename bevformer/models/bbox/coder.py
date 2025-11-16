@@ -37,60 +37,53 @@ class NMSFreeCoder(BaseBBoxCoder):
 
     def __init__(self,
                  pc_range: List[float],
-                 voxel_size: Optional[List[float]] = None,
                  post_center_range: Optional[List[float]] = None,
                  max_num: int = 100,
-                 score_threshold: Optional[float] = None,
                  num_classes: int = 10):
         self.pc_range = pc_range
-        self.voxel_size = voxel_size
         self.post_center_range = post_center_range
         self.max_num = max_num
-        self.score_threshold = score_threshold
         self.num_classes = num_classes
 
-    def encode(self, *args, **kwargs):
-        raise NotImplementedError
-
     def decode(self, preds_dicts):
-        """Decode classification and regression outputs."""
-        all_cls_scores = preds_dicts['all_cls_scores'][-1]  # [B, Q, C]
-        all_bbox_preds = preds_dicts['all_bbox_preds'][-1]  # [B, Q, code_size]
-
-        batch_size = all_cls_scores.size(0)
+        """Decode classification and regression outputs to 3D bounding boxes.
+        
+        Args:
+            preds_dicts: Dictionary containing predictions
+                - 'all_cls_scores': [num_dec_layers, B, num_query, num_classes]
+                - 'all_bbox_preds': [num_dec_layers, B, num_query, code_size]
+        
+        Returns:
+            List[dict]: Decoded results for each sample in batch
+        """
+        cls_scores = preds_dicts['all_cls_scores'][-1]  # [B, num_query, num_classes]
+        bbox_preds = preds_dicts['all_bbox_preds'][-1]  # [B, num_query, code_size]
+        
         results = []
-        for batch_id in range(batch_size):
-            results.append(self._decode_single(all_cls_scores[batch_id],
-                                               all_bbox_preds[batch_id]))
+        for i in range(cls_scores.size(0)):
+            # Get top-k predictions across all queries and classes
+            scores, indices = cls_scores[i].sigmoid().view(-1).topk(self.max_num)
+            labels = indices % self.num_classes
+            bbox_indices = indices // self.num_classes
+            
+            # Denormalize selected bbox predictions
+            boxes3d = denormalize_bbox(bbox_preds[i][bbox_indices], self.pc_range)
+            
+            # Apply center range filter
+            if self.post_center_range is not None:
+                center_range = torch.tensor(
+                    self.post_center_range,
+                    device=boxes3d.device,
+                    dtype=boxes3d.dtype
+                )
+                mask = (boxes3d[..., :3] >= center_range[:3]).all(-1)
+                mask &= (boxes3d[..., :3] <= center_range[3:]).all(-1)
+                boxes3d, scores, labels = boxes3d[mask], scores[mask], labels[mask]
+            
+            results.append({
+                'bboxes': boxes3d,
+                'scores': scores,
+                'labels': labels,
+            })
+        
         return results
-
-    def _decode_single(self,
-                       cls_scores: torch.Tensor,
-                       bbox_preds: torch.Tensor) -> dict:
-        cls_scores = cls_scores.sigmoid()
-        scores, indices = cls_scores.view(-1).topk(self.max_num)
-        labels = indices % self.num_classes
-        bbox_indices = indices // self.num_classes
-        bbox_preds = bbox_preds[bbox_indices]
-
-        boxes3d = denormalize_bbox(bbox_preds, self.pc_range)
-
-        if self.post_center_range is not None:
-            post_center_range = torch.tensor(
-                self.post_center_range,
-                device=boxes3d.device,
-                dtype=boxes3d.dtype
-            )
-            mask = (boxes3d[..., :3] >= post_center_range[:3]).all(-1)
-            mask &= (boxes3d[..., :3] <= post_center_range[3:]).all(-1)
-            if self.score_threshold is not None:
-                mask &= scores > self.score_threshold
-            boxes3d = boxes3d[mask]
-            scores = scores[mask]
-            labels = labels[mask]
-
-        return {
-            'bboxes': boxes3d,
-            'scores': scores,
-            'labels': labels,
-        }

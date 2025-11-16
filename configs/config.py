@@ -83,22 +83,33 @@ model = dict(
                         dict(
                             type='TemporalSelfAttention',
                             embed_dims=_dim_,
-                            num_levels=2,  # Two temporal frames: [prev_bev, current_bev]
-                            num_points=8,
-                            num_heads=8),
+                            num_levels=1, 
+                            num_points=4,
+                            num_heads=8,
+                            num_bev_queue=2,
+                            im2col_step=64,
+                            dropout=0.1,
+                            ),
                         dict(
                             type='SpatialCrossAttention',
                             pc_range=point_cloud_range,
                             deformable_attention=dict(
                                 type='MSDeformableAttention3D',
                                 embed_dims=_dim_,
+                                num_levels=_num_levels_,
                                 num_points=8,
-                                num_levels=_num_levels_),
+                                num_heads=8,
+                                im2col_step=64),
                             embed_dims=_dim_,
                         )
                     ],
-                    feedforward_channels=_ffn_dim_,
-                    ffn_dropout=0.1,
+                    ffn_cfgs=dict(
+                        type='FFN',
+                        embed_dims=_dim_,
+                        feedforward_channels=_ffn_dim_,
+                        num_fcs=2,
+                        ffn_drop=0.1,
+                        act_cfg=dict(type='ReLU', inplace=True)),
                     operation_order=('self_attn', 'norm', 'cross_attn', 'norm',
                                      'ffn', 'norm'))),
             decoder=dict(

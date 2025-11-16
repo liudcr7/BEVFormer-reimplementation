@@ -1,9 +1,11 @@
 from .perception_transformer import PerceptionTransformer
-from .encoders import BEVFormerEncoder, BEVFormerLayer
-from .temporal_self_attention import TemporalSelfAttention
-from .spatial_cross_attention import SpatialCrossAttention
-from .ms_deform_attn_3d import MSDeformableAttention3D, CustomMSDeformableAttention
-from .custom_base_transformer_layer import MyCustomBaseTransformerLayer
+from .encoder.encoders import BEVFormerEncoder
+from .encoder.bevformer_layer import BEVFormerLayer
+from .encoder.temporal_self_attention import TemporalSelfAttention
+from .encoder.spatial_cross_attention import SpatialCrossAttention
+from .encoder.ms_deform_attn_3d import MSDeformableAttention3D
+from .decoder.custom_base_transformer_layer import CustomMSDeformableAttention
+from .decoder.detr_decoder import DetectionTransformerDecoder
 
 __all__ = [
     'PerceptionTransformer',
@@ -13,6 +15,6 @@ __all__ = [
     'SpatialCrossAttention',
     'MSDeformableAttention3D',
     'CustomMSDeformableAttention',
-    'MyCustomBaseTransformerLayer',
+    'DetectionTransformerDecoder',
 ]
 

@@ -59,74 +59,80 @@ def normalize_bbox(bboxes: torch.Tensor,
     return torch.cat(components, dim=-1)
 
 
-if BBOX_ASSIGNERS is not None and build_match_cost is not None:
 
-    @BBOX_ASSIGNERS.register_module()
-    class HungarianAssigner3D(BaseAssigner):
-        """Hungarian matcher used in BEVFormer DETR-style heads."""
+@BBOX_ASSIGNERS.register_module()
+class HungarianAssigner3D(BaseAssigner):
+    """Hungarian matcher used in BEVFormer DETR-style heads."""
 
-        def __init__(self,
-                     cls_cost: Optional[dict] = None,
-                     reg_cost: Optional[dict] = None,
-                     iou_cost: Optional[dict] = None,
-                     pc_range: Optional[list] = None):
-            cls_cost = cls_cost or dict(type='FocalLossCost',
-                                        weight=2.0,
-                                        alpha=0.25,
-                                        gamma=2.0)
-            reg_cost = reg_cost or dict(type='BBoxL1Cost', weight=0.25)
-            iou_cost = iou_cost or dict(type='IoUCost', weight=0.0)
+    def __init__(self,
+                    cls_cost: Optional[dict] = None,
+                    reg_cost: Optional[dict] = None,
+                    pc_range: Optional[list] = None):
+        self.cls_cost = build_match_cost(cls_cost)
+        self.reg_cost = build_match_cost(reg_cost)
+        self.pc_range = pc_range
 
-            self.cls_cost = build_match_cost(cls_cost)
-            self.reg_cost = build_match_cost(reg_cost)
-            self.iou_cost = build_match_cost(iou_cost)
-            self.pc_range = pc_range
+    @force_fp32(apply_to=('bbox_pred', 'cls_pred'))
+    def assign(self,
+                bbox_pred: torch.Tensor,
+                cls_pred: torch.Tensor,
+                gt_bboxes: torch.Tensor,
+                gt_labels: torch.Tensor,
+                gt_bboxes_ignore: Optional[torch.Tensor] = None,
+                eps: float = 1e-7) -> AssignResult:
+        """Assign predictions to ground truth using Hungarian algorithm.
+        
+        This function computes a cost matrix between predictions and ground truth,
+        then uses Hungarian algorithm to find the optimal assignment that minimizes
+        total cost. The cost includes classification cost, regression cost, and IoU cost.
+        
+        Args:
+            bbox_pred: Normalized bbox predictions
+                - Shape: [num_query, code_size]
+                - Format: [cx, cy, cz, log(w), log(l), log(h), sin(rot), cos(rot), vx, vy]
+                - Coordinates are normalized to [0, 1] range
+            cls_pred: Classification predictions
+                - Shape: [num_query, num_classes]
+                - Logits before sigmoid
+            gt_bboxes: Ground truth 3D boxes
+                - Shape: [num_gt, code_size]
+                - Format: [cx, cy, cz, w, l, h, rot, vx, vy] in real-world coordinates
+            gt_labels: Ground truth labels
+                - Shape: [num_gt]
+                - Class indices (0 to num_classes-1)
+            gt_bboxes_ignore: Ignored boxes (not supported)
+                - Must be None
+        
+        Returns:
+            AssignResult: Assignment result containing:
+                - num_gts: Number of ground truth boxes
+                - assigned_gt_inds: [num_query] - assigned GT index (0=background, 1+=GT index)
+                - assigned_labels: [num_query] - assigned class labels
+        """
+        if linear_sum_assignment is None:
+            raise ImportError('Please install scipy to use HungarianAssigner3D.')
 
-        @force_fp32(apply_to=('bbox_pred', 'cls_pred'))
-        def assign(self,
-                   bbox_pred: torch.Tensor,
-                   cls_pred: torch.Tensor,
-                   gt_bboxes: torch.Tensor,
-                   gt_labels: torch.Tensor,
-                   gt_bboxes_ignore: Optional[torch.Tensor] = None,
-                   eps: float = 1e-7) -> AssignResult:
-            if linear_sum_assignment is None:
-                raise ImportError('Please install scipy to use HungarianAssigner3D.')
+        num_gts, num_queries = gt_bboxes.size(0), bbox_pred.size(0)
+        assigned_gt_inds = bbox_pred.new_zeros(num_queries, dtype=torch.long)
+        assigned_labels = bbox_pred.new_full((num_queries,), -1, dtype=torch.long)
 
-            assert gt_bboxes_ignore is None, \
-                'HungarianAssigner3D does not support gt_bboxes_ignore.'
-
-            num_gts, num_bboxes = gt_bboxes.size(0), bbox_pred.size(0)
-
-            assigned_gt_inds = bbox_pred.new_full((num_bboxes,), -1, dtype=torch.long)
-            assigned_labels = bbox_pred.new_full((num_bboxes,), -1, dtype=torch.long)
-
-            if num_gts == 0 or num_bboxes == 0:
-                if num_gts == 0:
-                    assigned_gt_inds[:] = 0
-                return AssignResult(num_gts, assigned_gt_inds, None, labels=assigned_labels)
-
-            cls_cost = self.cls_cost(cls_pred, gt_labels)
-            normalized_gt = normalize_bbox(gt_bboxes, self.pc_range)
-            reg_cost = self.reg_cost(bbox_pred[..., :normalized_gt.size(-1)],
-                                     normalized_gt)
-            iou_cost = self.iou_cost(bbox_pred[..., :normalized_gt.size(-1)],
-                                     normalized_gt)
-
-            cost = cls_cost + reg_cost + iou_cost
-            cost = cost.detach().cpu().numpy()
-            row_ind, col_ind = linear_sum_assignment(cost)
-
-            assigned_gt_inds[:] = 0
-            row_ind = torch.from_numpy(row_ind).to(bbox_pred.device)
-            col_ind = torch.from_numpy(col_ind).to(bbox_pred.device)
-            assigned_gt_inds[row_ind] = col_ind + 1
-            assigned_labels[row_ind] = gt_labels[col_ind]
-
+        # Handle empty cases
+        if num_gts == 0 or num_queries == 0:
             return AssignResult(num_gts, assigned_gt_inds, None, labels=assigned_labels)
 
-else:  # pragma: no cover - executed only when mmdet is unavailable
+        # Compute cost matrix
+        normalized_gt = normalize_bbox(gt_bboxes, self.pc_range)
+        cost = (self.cls_cost(cls_pred, gt_labels) + 
+                self.reg_cost(bbox_pred[..., :normalized_gt.size(-1)], normalized_gt))
+        
+        # Hungarian matching
+        row_ind, col_ind = linear_sum_assignment(cost.detach().cpu().numpy())
+        row_ind = torch.from_numpy(row_ind).to(bbox_pred.device)
+        col_ind = torch.from_numpy(col_ind).to(bbox_pred.device)
+        
+        # Assign matches (1-indexed: 0=background, 1+=GT index)
+        assigned_gt_inds[row_ind] = col_ind + 1
+        assigned_labels[row_ind] = gt_labels[col_ind]
 
-    class HungarianAssigner3D:  # type: ignore
-        def __init__(self, *args, **kwargs):
-            raise ImportError('mmdet is required to build HungarianAssigner3D.')
+        return AssignResult(num_gts, assigned_gt_inds, None, labels=assigned_labels)
+
