@@ -18,13 +18,7 @@ except Exception:
         return decorator
     def build_attention(cfg): return None
 
-try:
-    from mmdet.models.utils.builder import ATTENTION
-except Exception:
-    try:
-        from mmdet.models.builder import ATTENTION
-    except Exception:
-        ATTENTION = None
+from mmcv.cnn.bricks.registry import ATTENTION
 
 @ATTENTION.register_module()
 class SpatialCrossAttention(BaseModule):

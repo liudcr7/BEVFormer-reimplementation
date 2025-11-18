@@ -95,7 +95,7 @@ class PerceptionTransformer(BaseModule):
         
         This method:
         1. Initializes all 2D+ parameters with xavier uniform
-        2. Calls init_weights() on all submodules (attention modules, etc.)
+        2. Skips calling init_weights() on submodules (already initialized above)
         3. Initializes embeddings with normal distribution
         4. Initializes linear layers with xavier uniform
         """
@@ -103,11 +103,6 @@ class PerceptionTransformer(BaseModule):
         for p in self.parameters():
             if p.dim() > 1:
                 nn.init.xavier_uniform_(p)
-        
-        # Initialize attention modules (SpatialCrossAttention, TemporalSelfAttention, etc.)
-        for m in self.modules():
-            if hasattr(m, 'init_weights'):
-                m.init_weights()
         
         # Initialize embeddings with normal distribution
         normal_(self.level_embeds)
@@ -351,7 +346,7 @@ class PerceptionTransformer(BaseModule):
         # This information is encoded and added to queries to help the model understand
         # the relationship between current and previous frames
         if self.use_can_bus:
-            can_bus = torch.tensor([m['can_bus'] for m in kwargs['img_metas']], device=device)  # [B, 18]
+            can_bus = torch.tensor([m['can_bus'] for m in kwargs['img_metas']], device=device, dtype=torch.float32)  # [B, 18]
             can_bus_embed = self.can_bus_mlp(can_bus)[None, :, :]  # [1, B, embed_dims] - add sequence dimension
             bev_queries = bev_queries + can_bus_embed
         
@@ -377,9 +372,8 @@ class PerceptionTransformer(BaseModule):
             **kwargs
         )
         
-        # Convert back to batch_first format: [B, bev_h*bev_w, embed_dims]
-        # Encoder returns sequence-first format, but we need batch-first for downstream
-        return bev_embed.permute(1, 0, 2) if bev_embed.dim() == 3 else bev_embed
+        # [B, bev_h*bev_w, embed_dims]
+        return bev_embed
     
     @auto_fp16(apply_to=('mlvl_feats', 'bev_queries', 'object_query_embed', 'prev_bev', 'bev_pos'))
     def forward(
@@ -486,4 +480,17 @@ class PerceptionTransformer(BaseModule):
             **kwargs
         )
         
-        return bev_embed, inter_states, init_reference, inter_references
+        # Convert bev_embed from sequence-first to batch-first format
+        # bev_embed: [bev_h*bev_w, B, embed_dims] -> [B, bev_h*bev_w, embed_dims]
+        bev_embed_batch = bev_embed.permute(1, 0, 2)  # [B, bev_h*bev_w, embed_dims]
+        
+        # Merge init_reference and inter_references into all_references
+        # init_reference: [B, num_query, 3]
+        # inter_references: [num_dec_layers, B, num_query, 3]
+        # all_references: [num_dec_layers + 1, B, num_query, 3] (first is initial, rest are per layer)
+        all_references = torch.cat([
+            init_reference.unsqueeze(0),  # [1, B, num_query, 3] - initial reference points
+            inter_references  # [num_dec_layers, B, num_query, 3] - per-layer reference points
+        ], dim=0)  # [num_dec_layers + 1, B, num_query, 3]
+        
+        return bev_embed_batch, inter_states, all_references

@@ -45,8 +45,9 @@ model = dict(
         norm_cfg=dict(type='BN2d', requires_grad=False),
         norm_eval=True,
         style='caffe',
-        dcn=dict(type='DCNv2', deform_groups=1, fallback_on_stride=False),
-        stage_with_dcn=(False, False, True, True)),
+        # dcn=dict(type='DCNv2', deform_groups=1, fallback_on_stride=True),  # Enable fallback for CUDA compatibility (sm_120)
+        # stage_with_dcn=(False, False, True, True)
+        ),
     img_neck=dict(
         type='FPN',
         in_channels=[512, 1024, 2048],
@@ -127,7 +128,7 @@ model = dict(
                          dict(
                             type='CustomMSDeformableAttention',
                             embed_dims=_dim_,
-                            num_levels=_num_levels_,  # Should be 4 for multi-scale features
+                            num_levels=1,  
                             num_points=8),
                     ],
                     feedforward_channels=_ffn_dim_,
@@ -153,21 +154,21 @@ model = dict(
             gamma=2.0,
             alpha=0.25,
             loss_weight=2.0),
-        loss_bbox=dict(type='L1Loss', loss_weight=0.25)),
+        loss_bbox=dict(type='L1Loss', loss_weight=0.25),
+        assigner=dict(
+            type='HungarianAssigner3D',
+            cls_cost=dict(type='FocalLossCost', weight=2.0, alpha=0.25, gamma=2.0),
+            reg_cost=dict(type='BBoxL1Cost', weight=0.25))),
     # model training and testing settings
     train_cfg=dict(pts=dict(
         grid_size=[512, 512, 1],
         voxel_size=voxel_size,
         point_cloud_range=point_cloud_range,
-        out_size_factor=4,
-        assigner=dict(
-            type='HungarianAssigner3D',
-            cls_cost=dict(type='FocalLossCost', weight=2.0, alpha=0.25, gamma=2.0),
-            reg_cost=dict(type='BBoxL1Cost', weight=0.25)))))
+        out_size_factor=4)))
 
 # Dataset configuration
 dataset_type = 'CustomNuScenesDataset'
-data_root = 'data/nuscenes/'
+data_root = 'F:/v1.0-mini/nuscenes/'
 file_client_args = dict(backend='disk')
 
 # Training pipeline
@@ -205,7 +206,7 @@ test_pipeline = [
 # Data configuration
 data = dict(
     samples_per_gpu=1,
-    workers_per_gpu=4,
+    workers_per_gpu=0,  # Set to 0 on Windows to avoid multiprocessing pickle issues
     train=dict(
         type=dataset_type,
         data_root=data_root,
@@ -258,7 +259,7 @@ lr_config = dict(
     warmup_ratio=1.0 / 3,
     min_lr_ratio=1e-3)
 
-total_epochs = 24
+total_epochs = 4
 
 # Evaluation configuration
 evaluation = dict(interval=1, pipeline=test_pipeline)
@@ -274,8 +275,17 @@ log_config = dict(
     interval=50,
     hooks=[
         dict(type='TextLoggerHook'),
-        dict(type='TensorboardLoggerHook')
+        # TensorboardLoggerHook disabled due to setuptools compatibility issue
+        # To enable: upgrade tensorboard: pip install --upgrade tensorboard
+        # dict(type='TensorboardLoggerHook')
     ])
 
 # Checkpoint configuration
 checkpoint_config = dict(interval=1)
+
+# Workflow configuration
+# Format: [('train', 1)] for training only, [('train', 1), ('val', 1)] for train+val
+workflow = [('train', 1)]
+
+# Log level configuration
+log_level = 'INFO'

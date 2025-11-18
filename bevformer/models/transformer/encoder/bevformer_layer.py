@@ -117,7 +117,6 @@ if TRANSFORMER_LAYER is not None:
                     bev_h=None,
                     bev_w=None,
                     reference_points_cam=None,
-                    mask=None,
                     spatial_shapes=None,
                     level_start_index=None,
                     prev_bev=None,
@@ -131,8 +130,9 @@ if TRANSFORMER_LAYER is not None:
                 ref_2d: [bs*2, num_query, num_levels, 2] 2D reference points for TSA
                 ref_3d: [bs, num_query, D, 3] 3D reference points for SCA
                 reference_points_cam: [num_cam, bs, num_query, D, 2] projected points
-                bev_mask: [num_cam, bs, num_query, D] visibility mask
                 prev_bev: [bs*2, num_query, embed_dims] previous BEV (stacked with current)
+                **kwargs: Additional arguments including bev_mask (from encoder)
+                    - bev_mask: [num_cam, bs, num_query, D] visibility mask
                 
             Returns:
                 query: [bs, num_query, embed_dims] updated BEV queries
@@ -184,12 +184,10 @@ if TRANSFORMER_LAYER is not None:
                         key_pos=key_pos,
                         reference_points=ref_3d,
                         reference_points_cam=reference_points_cam,
-                        mask=mask,
                         attn_mask=attn_masks[attn_index],
                         key_padding_mask=key_padding_mask,
                         spatial_shapes=spatial_shapes,
                         level_start_index=level_start_index,
-                        bev_mask=mask,  # bev_mask is passed as mask
                         **kwargs)
                     attn_index += 1
                     identity = query

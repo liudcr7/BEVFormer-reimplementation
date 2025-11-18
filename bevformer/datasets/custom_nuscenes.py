@@ -42,7 +42,7 @@ class CustomNuScenesDataset(NuScenesDataset):
         """Prepare test data with camera parameters."""
         data = super().prepare_test_data(index)
         if hasattr(data['img_metas'], 'data'):
-        img_metas = data['img_metas'].data[0]
+            img_metas = data['img_metas'].data[0]
         else:
             img_metas = data['img_metas']
         

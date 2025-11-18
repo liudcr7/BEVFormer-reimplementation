@@ -39,11 +39,27 @@ class NMSFreeCoder(BaseBBoxCoder):
                  pc_range: List[float],
                  post_center_range: Optional[List[float]] = None,
                  max_num: int = 100,
-                 num_classes: int = 10):
+                 num_classes: int = 10,
+                 voxel_size: Optional[List[float]] = None):
+        super().__init__()
         self.pc_range = pc_range
         self.post_center_range = post_center_range
         self.max_num = max_num
         self.num_classes = num_classes
+        self.voxel_size = voxel_size
+
+    def encode(self, bboxes, gt_bboxes):
+        """Encode bboxes to targets (not used in BEVFormer, but required by BaseBBoxCoder).
+        
+        Args:
+            bboxes: Source bboxes
+            gt_bboxes: Target bboxes
+            
+        Returns:
+            Encoded bboxes (placeholder implementation)
+        """
+        # BEVFormer doesn't use encode, but we need to implement it for BaseBBoxCoder
+        return gt_bboxes
 
     def decode(self, preds_dicts):
         """Decode classification and regression outputs to 3D bounding boxes.

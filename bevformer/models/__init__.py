@@ -1,5 +1,14 @@
 from .bevformer import BEVFormer                   # noqa: F401
-from .bevformer_head import BEVFormerHead, LearnedPositionalEncoding  # noqa: F401
+from .bevformer_head import BEVFormerHead  # noqa: F401
+
+# Import LearnedPositionalEncoding from mmdet for backward compatibility
+try:
+    from mmdet.models.utils.positional_encoding import LearnedPositionalEncoding  # noqa: F401
+except ImportError:
+    try:
+        from mmdet.models.utils import LearnedPositionalEncoding  # noqa: F401
+    except ImportError:
+        LearnedPositionalEncoding = None  # noqa: F401
 from .transformer.perception_transformer import PerceptionTransformer  # noqa
 from .transformer.encoder.encoders import BEVFormerEncoder      # noqa
 from .transformer.encoder.bevformer_layer import BEVFormerLayer      # noqa

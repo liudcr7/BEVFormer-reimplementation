@@ -20,13 +20,7 @@ except Exception:
 
 # Try to import ATTENTION registry for module registration
 # This allows the module to be built from config files
-try:
-    from mmdet.models.utils.builder import ATTENTION
-except Exception:
-    try:
-        from mmdet.models.builder import ATTENTION
-    except Exception:
-        ATTENTION = None
+from mmcv.cnn.bricks.registry import ATTENTION
 
 
 if ATTENTION is not None:
@@ -69,6 +63,9 @@ if ATTENTION is not None:
                      num_points=4,
                      dropout=0.1,
                      **kwargs):
+            # Call super().__init__() FIRST before creating any submodules
+            super().__init__(None)
+            
             # Validate: embed_dims must be divisible by num_heads
             if embed_dims % num_heads != 0:
                 raise ValueError(
@@ -224,14 +221,14 @@ if ATTENTION is not None:
                 sampling_loc_lvl = sampling_locations[:, :, :, level_id, :, :]
                 # Convert [0, 1] -> [-1, 1] and reshape: [bs*num_heads, num_query, num_points, 2]
                 sampling_loc_lvl = (sampling_loc_lvl * 2.0 - 1.0).permute(0, 2, 1, 3, 4).contiguous()
-                sampling_loc_lvl = sampling_loc_lvl.view(bs * num_heads, num_query, num_points, 2)
+                sampling_loc_lvl = sampling_loc_lvl.view(bs * num_heads, num_query, self.num_points, 2)
                 
                 # Sample: [bs*num_heads, dim_per_head, H, W] -> [bs*num_heads, dim_per_head, num_query, num_points]
                 sampled_value = F.grid_sample(
                     value_lvl, sampling_loc_lvl, mode='bilinear', padding_mode='zeros', align_corners=True)
                 
                 # Reshape: [bs, num_query, num_heads, dim_per_head, num_points]
-                sampled_value = sampled_value.view(bs, num_heads, dim_per_head, num_query, num_points)
+                sampled_value = sampled_value.view(bs, num_heads, dim_per_head, num_query, self.num_points)
                 sampled_value = sampled_value.permute(0, 3, 1, 2, 4)
                 
                 # Weighted sum: [bs, num_query, num_heads, dim_per_head]
@@ -243,12 +240,15 @@ if ATTENTION is not None:
         
         def forward(self,
                     query,
+                    key=None,
                     value=None,
                     identity=None,
                     query_pos=None,
                     key_padding_mask=None,
                     reference_points=None,
                     spatial_shapes=None,
+                    level_start_index=None,
+                    flag='decoder',
                     **kwargs):
             """Forward pass of multi-scale deformable attention.
             

@@ -3,27 +3,10 @@ from typing import Optional
 
 import torch
 
-try:
-    from mmdet.core.bbox.builder import BBOX_ASSIGNERS
-    from mmdet.core.bbox.assigners import BaseAssigner, AssignResult
-    from mmdet.core.bbox.match_costs import build_match_cost
-    from mmdet.core import force_fp32
-except Exception:  # pragma: no cover - fallback for environments without mmdet
-    try:
-        from mmdet.models.builder import ASSIGNERS as BBOX_ASSIGNERS  # type: ignore
-        from mmdet.core.bbox.assigners import BaseAssigner, AssignResult  # type: ignore
-        from mmdet.core.bbox.match_costs import build_match_cost  # type: ignore
-    except Exception:
-        BBOX_ASSIGNERS = None  # type: ignore
-        build_match_cost = None  # type: ignore
-        BaseAssigner = object  # type: ignore
-        AssignResult = object  # type: ignore
 
-    def force_fp32(*args, **kwargs):  # type: ignore
-        def decorator(func):
-            return func
-
-        return decorator
+from mmdet.core.bbox.builder import BBOX_ASSIGNERS
+from mmdet.core.bbox.assigners import BaseAssigner, AssignResult
+from mmdet.core.bbox.match_costs import build_match_cost
 
 try:
     from scipy.optimize import linear_sum_assignment
@@ -72,7 +55,6 @@ class HungarianAssigner3D(BaseAssigner):
         self.reg_cost = build_match_cost(reg_cost)
         self.pc_range = pc_range
 
-    @force_fp32(apply_to=('bbox_pred', 'cls_pred'))
     def assign(self,
                 bbox_pred: torch.Tensor,
                 cls_pred: torch.Tensor,
@@ -122,8 +104,28 @@ class HungarianAssigner3D(BaseAssigner):
 
         # Compute cost matrix
         normalized_gt = normalize_bbox(gt_bboxes, self.pc_range)
+        
+        # Extract BEV 2D bbox for reg_cost (BBoxL1Cost expects 2D format: cx, cy, w, h)
+        # bbox_pred format: [cx, cy, cz, log(w), log(l), log(h), sin(rot), cos(rot), vx, vy]
+        # normalized_gt format: [cx, cy, cz, log(w), log(l), log(h), sin(rot), cos(rot), vx, vy]
+        # For BEV matching, we use (cx, cy, w, l) where w and l are in log space
+        # Convert log(w) and log(l) back to w and l for 2D bbox cost computation
+        bbox_pred_bev = torch.cat([
+            bbox_pred[..., 0:1],  # cx
+            bbox_pred[..., 1:2],  # cy
+            bbox_pred[..., 3:4].exp(),  # w = exp(log(w))
+            bbox_pred[..., 4:5].exp(),  # l = exp(log(l))
+        ], dim=-1)  # [num_query, 4]
+        
+        normalized_gt_bev = torch.cat([
+            normalized_gt[..., 0:1],  # cx
+            normalized_gt[..., 1:2],  # cy
+            normalized_gt[..., 3:4].exp(),  # w = exp(log(w))
+            normalized_gt[..., 4:5].exp(),  # l = exp(log(l))
+        ], dim=-1)  # [num_gt, 4]
+        
         cost = (self.cls_cost(cls_pred, gt_labels) + 
-                self.reg_cost(bbox_pred[..., :normalized_gt.size(-1)], normalized_gt))
+                self.reg_cost(bbox_pred_bev, normalized_gt_bev))
         
         # Hungarian matching
         row_ind, col_ind = linear_sum_assignment(cost.detach().cpu().numpy())

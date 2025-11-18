@@ -77,10 +77,14 @@ class DetectionTransformerDecoder(TransformerLayerSequence):
     
     def forward(self,
                 query: torch.Tensor,
-                *args,
+                key: torch.Tensor = None,
+                value: torch.Tensor = None,
+                query_pos: torch.Tensor = None,
                 reference_points: torch.Tensor = None,
                 reg_branches: nn.ModuleList = None,
                 key_padding_mask: torch.Tensor = None,
+                spatial_shapes: torch.Tensor = None,
+                level_start_index: torch.Tensor = None,
                 **kwargs) -> tuple:
         """Forward function for DetectionTransformerDecoder.
         
@@ -88,6 +92,14 @@ class DetectionTransformerDecoder(TransformerLayerSequence):
             query: Object queries
                 - Shape: [num_query, bs, embed_dims] (sequence-first format)
                 - num_query: number of object queries (typically 900)
+            key: Key features for cross-attention (optional)
+                - Shape: [num_key, bs, embed_dims] (sequence-first format)
+                - Usually None for decoder (not used)
+            value: Value features for cross-attention
+                - Shape: [num_value, bs, embed_dims] (sequence-first format)
+                - Usually BEV features: [bev_h*bev_w, bs, embed_dims]
+            query_pos: Positional encoding for queries (optional)
+                - Shape: [num_query, bs, embed_dims] (sequence-first format)
             reference_points: Initial reference points for bounding box regression
                 - Shape: [bs, num_query, 3]
                 - Format: (x, y, z) normalized to [0, 1] range
@@ -98,6 +110,12 @@ class DetectionTransformerDecoder(TransformerLayerSequence):
                 - Each head: [bs, num_query, embed_dims] -> [bs, num_query, code_size]
             key_padding_mask: Key padding mask (optional)
                 - Used to mask out invalid positions in attention
+            spatial_shapes: Spatial shapes of feature levels (optional)
+                - Shape: [num_levels, 2]
+                - Used by deformable attention
+            level_start_index: Start indices for each level (optional)
+                - Shape: [num_levels]
+                - Used by deformable attention
             
         Returns:
             tuple: 
@@ -120,9 +138,13 @@ class DetectionTransformerDecoder(TransformerLayerSequence):
             # Apply decoder layer
             output = layer(
                 output,
-                *args,
+                key=key,
+                value=value,
+                query_pos=query_pos,
                 reference_points=ref_input,
                 key_padding_mask=key_padding_mask,
+                spatial_shapes=spatial_shapes,
+                level_start_index=level_start_index,
                 **kwargs
             )
             

@@ -27,18 +27,33 @@ class BEVFormer(MVXTwoStageDetector):
                  test_cfg=None,
                  pretrained=None,
                  init_cfg=None):
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info('BEVFormer.__init__: Starting initialization...')
+        import sys
+        sys.stdout.flush()
+        
+        logger.info('BEVFormer.__init__: Calling super().__init__()...')
+        sys.stdout.flush()
         super().__init__(pts_voxel_layer, pts_voxel_encoder, pts_middle_encoder,
                          pts_fusion_layer, img_backbone, pts_backbone, img_neck,
                          pts_neck, pts_bbox_head, img_roi_head, img_rpn_head,
                          train_cfg, test_cfg, pretrained)
+        logger.info('BEVFormer.__init__: super().__init__() completed')
+        sys.stdout.flush()
+        
         if init_cfg is not None:
             self.init_cfg = init_cfg
 
         self.use_grid_mask = use_grid_mask
         self.enable_temporal_test = enable_temporal_test
 
+        logger.info('BEVFormer.__init__: Creating GridMask...')
+        sys.stdout.flush()
         self.grid_mask = GridMask(True, True, rotate=1, offset=False, ratio=0.5,
                                   mode=1, prob=0.7) if self.use_grid_mask else None
+        logger.info('BEVFormer.__init__: Initialization completed')
+        sys.stdout.flush()
 
         self.prev_frame_info = {
             'prev_bev': None,
@@ -197,7 +212,7 @@ class BEVFormer(MVXTwoStageDetector):
         prev_bev = self.obtain_history_bev(prev_img, prev_img_metas)
         
         # Extract current frame's img_metas
-        img_metas = [each[len_queue-1] if isinstance(each, list) else each for each in img_metas]
+        img_metas = [each[len_queue-1] for each in img_metas]
         
         # Check if previous BEV exists
         if img_metas is not None and len(img_metas) > 0:

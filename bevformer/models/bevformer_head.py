@@ -5,15 +5,53 @@ import torch.nn as nn
 import torch.nn.functional as F
 from mmcv.runner.base_module import BaseModule
 from mmdet.models.builder import HEADS
-from mmdet.models.builder import build_transformer
-from .decoder.detr_decoder import DetectionTransformerDecoder
+from mmdet.models.utils import build_transformer
 from .bbox.assigner import HungarianAssigner3D, normalize_bbox
 from .bbox.coder import NMSFreeCoder
-from mmdet.models.builder import build_positional_encoding
-from mmdet.models.builder import build_assigner
-from mmdet.models.builder import build_bbox_coder
+from mmdet.core.bbox import build_assigner, build_bbox_coder
 from mmdet.models.builder import build_loss
 from mmdet.core import reduce_mean
+
+# Import positional encoding classes from mmdet
+try:
+    from mmdet.models.utils.positional_encoding import (
+        LearnedPositionalEncoding,
+        SinePositionalEncoding
+    )
+except ImportError:
+    # Fallback: try to import from different location
+    try:
+        from mmdet.models.utils import LearnedPositionalEncoding, SinePositionalEncoding
+    except ImportError:
+        LearnedPositionalEncoding = None
+        SinePositionalEncoding = None
+
+
+def build_positional_encoding(cfg):
+    """Build positional encoding from config dict.
+    
+    Args:
+        cfg (dict): Config dict with 'type' key specifying the positional encoding type.
+        
+    Returns:
+        Positional encoding module instance.
+    """
+    if cfg is None:
+        return None
+    
+    cfg = cfg.copy()
+    pos_encoding_type = cfg.pop('type')
+    
+    if pos_encoding_type == 'LearnedPositionalEncoding':
+        if LearnedPositionalEncoding is None:
+            raise ImportError('LearnedPositionalEncoding is not available. Please check mmdet installation.')
+        return LearnedPositionalEncoding(**cfg)
+    elif pos_encoding_type == 'SinePositionalEncoding':
+        if SinePositionalEncoding is None:
+            raise ImportError('SinePositionalEncoding is not available. Please check mmdet installation.')
+        return SinePositionalEncoding(**cfg)
+    else:
+        raise ValueError(f'Unknown positional encoding type: {pos_encoding_type}')
 
 
 @HEADS.register_module()
@@ -64,6 +102,7 @@ class BEVFormerHead(BaseModule):
             torch.tensor(self.code_weights, dtype=torch.float32, requires_grad=False),
             requires_grad=False
         )
+        
         self.transformer = build_transformer(transformer)
         self.positional_encoding = build_positional_encoding(positional_encoding)
         self.loss_cls = build_loss(loss_cls)
@@ -504,7 +543,6 @@ class BEVFormerHead(BaseModule):
         
         # Handle NaN values (for PyTorch >= 1.8)
         try:
-            import torch
             if hasattr(torch, 'nan_to_num') and torch.__version__ >= '1.8.0':
                 loss_cls = torch.nan_to_num(loss_cls)
                 loss_bbox = torch.nan_to_num(loss_bbox)
