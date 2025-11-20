@@ -7,6 +7,7 @@ import torch
 from mmdet.core.bbox.builder import BBOX_ASSIGNERS
 from mmdet.core.bbox.assigners import BaseAssigner, AssignResult
 from mmdet.core.bbox.match_costs import build_match_cost
+from mmdet.core.bbox.match_costs.builder import MATCH_COST
 
 try:
     from scipy.optimize import linear_sum_assignment
@@ -14,32 +15,40 @@ except ImportError:  # pragma: no cover - optional dependency
     linear_sum_assignment = None
 
 
-def normalize_bbox(bboxes: torch.Tensor,
-                   pc_range: Optional[list] = None) -> torch.Tensor:
-    """Convert bounding boxes to BEVFormer normalization format.
+@MATCH_COST.register_module()
+class BBox3DL1Cost:
+    """L1 cost over BEVFormer normalized bbox (8-d steering vector)."""
 
-    Args:
-        bboxes (Tensor): [..., code_size] boxes in real-world coordinates.
-        pc_range (list, optional): Point cloud range, kept for API compatibility.
+    def __init__(self, weight: float = 1.0):
+        self.weight = weight
 
-    Returns:
-        Tensor: Normalized boxes with layout
-            [cx, cy, cz, log(w), log(l), log(h), sin(rot), cos(rot), vx, vy].
-    """
+    def __call__(self, bbox_pred: torch.Tensor, gt_bboxes: torch.Tensor) -> torch.Tensor:
+        # Expect both inputs to share shape [num_query/gt, 8]
+        bbox_cost = torch.cdist(bbox_pred, gt_bboxes, p=1)
+        return bbox_cost * self.weight
+
+
+def normalize_bbox(bboxes, pc_range):
+
     cx = bboxes[..., 0:1]
     cy = bboxes[..., 1:2]
     cz = bboxes[..., 2:3]
-    w = bboxes[..., 3:4].clamp(min=1e-6).log()
-    l = bboxes[..., 4:5].clamp(min=1e-6).log()
-    h = bboxes[..., 5:6].clamp(min=1e-6).log()
-    rot = bboxes[..., 6:7]
+    w = bboxes[..., 3:4].log()
+    l = bboxes[..., 4:5].log()
+    h = bboxes[..., 5:6].log()
 
-    components = [cx, cy, cz, w, l, h, rot.sin(), rot.cos()]
+    rot = bboxes[..., 6:7]
     if bboxes.size(-1) > 7:
-        vx = bboxes[..., 7:8]
+        vx = bboxes[..., 7:8] 
         vy = bboxes[..., 8:9]
-        components.extend([vx, vy])
-    return torch.cat(components, dim=-1)
+        normalized_bboxes = torch.cat(
+            (cx, cy, w, l, cz, h, rot.sin(), rot.cos(), vx, vy), dim=-1
+        )
+    else:
+        normalized_bboxes = torch.cat(
+            (cx, cy, w, l, cz, h, rot.sin(), rot.cos()), dim=-1
+        )
+    return normalized_bboxes
 
 
 
@@ -104,28 +113,10 @@ class HungarianAssigner3D(BaseAssigner):
 
         # Compute cost matrix
         normalized_gt = normalize_bbox(gt_bboxes, self.pc_range)
-        
-        # Extract BEV 2D bbox for reg_cost (BBoxL1Cost expects 2D format: cx, cy, w, h)
-        # bbox_pred format: [cx, cy, cz, log(w), log(l), log(h), sin(rot), cos(rot), vx, vy]
-        # normalized_gt format: [cx, cy, cz, log(w), log(l), log(h), sin(rot), cos(rot), vx, vy]
-        # For BEV matching, we use (cx, cy, w, l) where w and l are in log space
-        # Convert log(w) and log(l) back to w and l for 2D bbox cost computation
-        bbox_pred_bev = torch.cat([
-            bbox_pred[..., 0:1],  # cx
-            bbox_pred[..., 1:2],  # cy
-            bbox_pred[..., 3:4].exp(),  # w = exp(log(w))
-            bbox_pred[..., 4:5].exp(),  # l = exp(log(l))
-        ], dim=-1)  # [num_query, 4]
-        
-        normalized_gt_bev = torch.cat([
-            normalized_gt[..., 0:1],  # cx
-            normalized_gt[..., 1:2],  # cy
-            normalized_gt[..., 3:4].exp(),  # w = exp(log(w))
-            normalized_gt[..., 4:5].exp(),  # l = exp(log(l))
-        ], dim=-1)  # [num_gt, 4]
+
         
         cost = (self.cls_cost(cls_pred, gt_labels) + 
-                self.reg_cost(bbox_pred_bev, normalized_gt_bev))
+                self.reg_cost(bbox_pred[:, :8], normalized_gt[:, :8]))
         
         # Hungarian matching
         row_ind, col_ind = linear_sum_assignment(cost.detach().cpu().numpy())

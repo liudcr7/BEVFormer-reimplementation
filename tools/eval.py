@@ -5,6 +5,14 @@ import os.path as osp
 import pickle
 import shutil
 import tempfile
+import sys
+
+# Add project root to Python path
+tools_dir = osp.dirname(osp.abspath(__file__))
+project_root = osp.dirname(tools_dir)
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 from mmcv import Config, DictAction
 from mmcv.runner import get_dist_info, init_dist, load_checkpoint
 from mmcv.parallel import MMDataParallel, MMDistributedDataParallel

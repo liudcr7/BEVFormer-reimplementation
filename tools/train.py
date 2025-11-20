@@ -239,7 +239,9 @@ def main():
         cfg.gpu_ids = range(1)
     else:
         distributed = True
-        init_dist(args.launcher, **cfg.dist_params)
+        # Use default dist_params if not specified in config
+        dist_params = cfg.get('dist_params', dict(backend='nccl'))
+        init_dist(args.launcher, **dist_params)
         _, world_size = get_dist_info()
         cfg.gpu_ids = range(world_size)
 
@@ -310,7 +312,7 @@ def main():
     meta['seed'] = args.seed
     meta['exp_name'] = osp.basename(args.config)
 
-    # 数据集
+    # dataset
     logger.info('Building training dataset...')
     logger.info(f'Dataset config: type={cfg.data.train.get("type")}, data_root={cfg.data.train.get("data_root")}, ann_file={cfg.data.train.get("ann_file")}')
     

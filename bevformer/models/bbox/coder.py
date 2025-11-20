@@ -6,30 +6,31 @@ from mmdet.core.bbox import BaseBBoxCoder
 from mmdet.core.bbox.builder import BBOX_CODERS
 
 
-def denormalize_bbox(normalized_bboxes: torch.Tensor,
-                     pc_range: List[float]) -> torch.Tensor:
-    """Convert normalized boxes back to real-world coordinates."""
-    rot_sin = normalized_bboxes[..., 6:7]
-    rot_cos = normalized_bboxes[..., 7:8]
-    rot = torch.atan2(rot_sin, rot_cos)
+def denormalize_bbox(normalized_bboxes, pc_range):
+    # rotation 
+    rot_sine = normalized_bboxes[..., 6:7]
+    rot_cosine = normalized_bboxes[..., 7:8]
+    rot = torch.atan2(rot_sine, rot_cosine)
 
-    cx = normalized_bboxes[..., 0:1]
-    cy = normalized_bboxes[..., 1:2]
-    cz = normalized_bboxes[..., 2:3]
-    w = normalized_bboxes[..., 3:4].exp()
-    l = normalized_bboxes[..., 4:5].exp()
-    h = normalized_bboxes[..., 5:6].exp()
-
+    # center in the bev - already in real-world coordinates
+    # Format: [cx, cy, log(w), log(l), cz, log(h), sin(rot), cos(rot), vx, vy]
+    cx = normalized_bboxes[..., 0:1]  # Already real-world
+    cy = normalized_bboxes[..., 1:2]  # Already real-world
+    cz = normalized_bboxes[..., 4:5]  # Already real-world, at index 4 (matching normalize_bbox format)
+   
+    # size - convert from log scale to real scale
+    w = normalized_bboxes[..., 2:3].exp()  # log(w) -> w
+    l = normalized_bboxes[..., 3:4].exp()  # log(l) -> l
+    h = normalized_bboxes[..., 5:6].exp()  # log(h) -> h
+    
     if normalized_bboxes.size(-1) > 8:
-        vx = normalized_bboxes[..., 8:9]
-        vy = normalized_bboxes[..., 9:10]
-        components = [cx, cy, cz, w, l, h, rot, vx, vy]
+        # velocity 
+        vx = normalized_bboxes[:, 8:9]
+        vy = normalized_bboxes[:, 9:10]
+        denormalized_bboxes = torch.cat([cx, cy, cz, w, l, h, rot, vx, vy], dim=-1)
     else:
-        components = [cx, cy, cz, w, l, h, rot]
-
-    box = torch.cat(components, dim=-1)
-    return box
-
+        denormalized_bboxes = torch.cat([cx, cy, cz, w, l, h, rot], dim=-1)
+    return denormalized_bboxes
 
 @BBOX_CODERS.register_module()
 class NMSFreeCoder(BaseBBoxCoder):

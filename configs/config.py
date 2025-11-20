@@ -158,7 +158,7 @@ model = dict(
         assigner=dict(
             type='HungarianAssigner3D',
             cls_cost=dict(type='FocalLossCost', weight=2.0, alpha=0.25, gamma=2.0),
-            reg_cost=dict(type='BBoxL1Cost', weight=0.25))),
+            reg_cost=dict(type='BBox3DL1Cost', weight=0.25))),
     # model training and testing settings
     train_cfg=dict(pts=dict(
         grid_size=[512, 512, 1],
@@ -206,7 +206,7 @@ test_pipeline = [
 # Data configuration
 data = dict(
     samples_per_gpu=1,
-    workers_per_gpu=0,  # Set to 0 on Windows to avoid multiprocessing pickle issues
+    workers_per_gpu=8,  # Set to 0 on Windows to avoid multiprocessing pickle issues
     train=dict(
         type=dataset_type,
         data_root=data_root,
@@ -272,9 +272,15 @@ load_from = 'ckpts/r101_dcn_fcos3d_pretrain.pth'
 
 # Logging configuration
 log_config = dict(
-    interval=50,
+    interval=50,  # Log every 50 iterations
     hooks=[
-        dict(type='TextLoggerHook'),
+        dict(
+            type='TextLoggerHook',
+            by_epoch=False,  # Log by iteration, not by epoch
+            ignore_last=False,  # Log the last iteration
+            reset_flag=False,  # Don't reset metrics after logging
+            interval_exp_name=False,  # Don't include experiment name in log
+        ),
         # TensorboardLoggerHook disabled due to setuptools compatibility issue
         # To enable: upgrade tensorboard: pip install --upgrade tensorboard
         # dict(type='TensorboardLoggerHook')

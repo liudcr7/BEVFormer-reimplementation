@@ -11,6 +11,7 @@ from .bbox.coder import NMSFreeCoder
 from mmdet.core.bbox import build_assigner, build_bbox_coder
 from mmdet.models.builder import build_loss
 from mmdet.core import reduce_mean
+from mmdet3d.core import bbox3d2result
 
 # Import positional encoding classes from mmdet
 try:
@@ -320,13 +321,11 @@ class BEVFormerHead(BaseModule):
             # Stack all layer outputs
             outputs_classes = torch.stack(outputs_classes)  # [num_dec_layers, B, num_query, num_classes]
             outputs_coords = torch.stack(outputs_coords)  # [num_dec_layers, B, num_query, code_size]
-            
             outs = {
                 'bev_embed': bev_embed,
                 'all_cls_scores': outputs_classes,
                 'all_bbox_preds': outputs_coords,
             }
-            
             return outs
     
     def loss(self,
@@ -363,18 +362,14 @@ class BEVFormerHead(BaseModule):
         # Convert gt_bboxes_3d from LiDARInstance3DBoxes to tensor format if needed
         device = gt_labels_3d[0].device if len(gt_labels_3d) > 0 and isinstance(gt_labels_3d[0], torch.Tensor) else all_cls_scores.device
         
-        # Check if gt_bboxes_3d contains LiDARInstance3DBoxes objects
-        try:
-            from mmdet3d.core.bbox import BaseInstance3DBoxes
-            if len(gt_bboxes_3d) > 0 and isinstance(gt_bboxes_3d[0], BaseInstance3DBoxes):
-                # Convert from LiDARInstance3DBoxes to tensor: [cx, cy, cz, w, l, h, rot, vx, vy, ...]
-                gt_bboxes_3d = [
-                    torch.cat((gt_bboxes.gravity_center, gt_bboxes.tensor[:, 3:]), dim=1).to(device)
-                    for gt_bboxes in gt_bboxes_3d
-                ]
-        except ImportError:
-            # mmdet3d not available, assume gt_bboxes_3d is already tensor format
-            pass
+
+        if len(gt_bboxes_3d) > 0:
+            # Convert from LiDARInstance3DBoxes to tensor: [cx, cy, cz, w, l, h, rot, vx, vy, ...]
+            gt_bboxes_3d = [
+                torch.cat((gt_bboxes.gravity_center, gt_bboxes.tensor[:, 3:]), dim=1).to(device)
+                for gt_bboxes in gt_bboxes_3d
+            ]
+
 
         num_layers = all_cls_scores.shape[0]  # Number of decoder layers
         loss_dict: Dict[str, torch.Tensor] = {}
@@ -564,7 +559,10 @@ class BEVFormerHead(BaseModule):
             score_thr: Score threshold for filtering
             
         Returns:
-            List of [bboxes, scores, labels] tuples matching original BEVFormer format
+            List of dicts, each containing:
+                - 'boxes_3d': BaseInstance3DBoxes object
+                - 'scores_3d': torch.Tensor of scores
+                - 'labels_3d': torch.Tensor of labels
         """
         preds_dicts = {
             'all_cls_scores': outs['all_cls_scores'],
@@ -584,15 +582,13 @@ class BEVFormerHead(BaseModule):
             # cz is center height, we need bottom height = cz - h/2
             bboxes[:, 2] = bboxes[:, 2] - bboxes[:, 5] * 0.5
             
-            # Convert to specific 3D box type (e.g., LiDARInstance3DBoxes)
             code_size = bboxes.shape[-1]
-            if img_metas is not None and i < len(img_metas) and 'box_type_3d' in img_metas[i]:
-                bboxes = img_metas[i]['box_type_3d'](bboxes, code_size)
-            
+            bboxes = img_metas[i]['box_type_3d'](bboxes, code_size)
             scores = preds['scores']
             labels = preds['labels']
-            
-            # Return format matching original BEVFormer: [bboxes, scores, labels]
-            ret_list.append([bboxes, scores, labels])
-        
+            ret_list.append([bboxes,scores,labels])
+        ret_list = [
+            bbox3d2result(bboxes, scores, labels)
+            for bboxes, scores, labels in ret_list
+        ]
         return ret_list

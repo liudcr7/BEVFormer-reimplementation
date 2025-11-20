@@ -146,6 +146,7 @@ class BEVFormer(MVXTwoStageDetector):
             for i in range(len_queue):
                 # Extract img_metas for frame i
                 img_metas = [each[i] for each in img_metas_list]
+            
                 
                 # Check if previous BEV exists for this frame
                 if not img_metas[0].get('prev_bev_exists', False):
@@ -294,34 +295,7 @@ class BEVFormer(MVXTwoStageDetector):
                 # Store current position and angle for next frame
                 self.prev_frame_info['prev_pos'] = tmp_pos
                 self.prev_frame_info['prev_angle'] = tmp_angle
-        
-        # Handle both temporal and non-temporal inputs
-        if img is not None and img.dim() == 6:
-            # Temporal input: [B, T, V, C, H, W]
-            len_queue = img.size(1)
-            prev_img = img[:, :-1, ...]
-            img = img[:, -1, ...]
-            
-            # Get previous BEV from history frames
-            prev_img_metas = [each[:-1] if isinstance(each, list) else [each] * (len_queue-1) 
-                             for each in img_metas]
-            prev_bev = self.obtain_history_bev(prev_img, prev_img_metas)
-            
-            # Current frame metas
-            img_metas = [each[len_queue-1] if isinstance(each, list) else each for each in img_metas]
-            
-            # Check prev_bev_exists
-            if img_metas is not None and len(img_metas) > 0:
-                if isinstance(img_metas[0], dict):
-                    prev_bev_exists = img_metas[0].get('prev_bev_exists', False)
-                elif hasattr(img_metas[0], 'data'):
-                    prev_bev_exists = img_metas[0].data.get('prev_bev_exists', False)
-                else:
-                    prev_bev_exists = False
-                
-                if not prev_bev_exists:
-                    prev_bev = None
-        
+              
         # Extract features for current frame
         img_feats = self.extract_feat(img=img, img_metas=img_metas)
         
@@ -338,9 +312,15 @@ class BEVFormer(MVXTwoStageDetector):
 
         # Decode boxes
         results = self.pts_bbox_head.get_bboxes(outs, img_metas=img_metas)
+
+        bbox_results = [dict() for i in range(len(img_metas))]
+        for b_ret, ret in zip(bbox_results, results):
+            b_ret['pts_bbox'] = ret
+
+
         
         # Update prev_frame_info with new BEV features for next frame
         if new_prev_bev is not None:
             self.prev_frame_info['prev_bev'] = new_prev_bev
         
-        return results
+        return bbox_results 
