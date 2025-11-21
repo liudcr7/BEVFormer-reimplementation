@@ -13,20 +13,22 @@ bevformer/models/
 │   ├── __init__.py
 │   ├── assigner.py                      # Hungarian matcher for assignment
 │   └── coder.py                         # BBox encoding/decoding
-├── decoder/                              # Detection decoder
-│   ├── __init__.py
-│   └── detr_decoder.py                  # DETR-style decoder
 ├── transformer/                          # Transformer modules
 │   ├── __init__.py
-│   ├── custom_base_transformer_layer.py # Base transformer layer
-│   ├── encoders.py                      # BEVFormer encoder
-│   ├── ms_deform_attn_3d.py             # Multi-scale deformable attention
 │   ├── perception_transformer.py        # Main transformer coordinator
-│   ├── spatial_cross_attention.py       # Spatial cross-attention (SCA)
-│   └── temporal_self_attention.py       # Temporal self-attention (TSA)
+│   ├── encoder/                          # BEVFormer encoder modules
+│   │   ├── __init__.py
+│   │   ├── encoders.py                  # BEVFormer encoder
+│   │   ├── bevformer_layer.py           # BEVFormer encoder layer
+│   │   ├── temporal_self_attention.py   # Temporal self-attention (TSA)
+│   │   ├── spatial_cross_attention.py   # Spatial cross-attention (SCA)
+│   │   └── ms_deform_attn_3d.py         # Multi-scale deformable attention
+│   └── decoder/                          # Detection decoder modules
+│       ├── __init__.py
+│       ├── detr_decoder.py              # DETR-style decoder
+│       └── custom_base_transformer_layer.py # Custom base transformer layer
 └── utils/                                # Utility modules
     ├── __init__.py
-    ├── focal.py                          # Focal loss implementation
     └── grid_mask.py                      # GridMask augmentation
 ```
 
@@ -54,15 +56,21 @@ bevformer/models/
 **Key Exports**:
 ```python
 from .bevformer import BEVFormer
-from .bevformer_head import BEVFormerHead, LearnedPositionalEncoding
+from .bevformer_head import BEVFormerHead
 from .transformer.perception_transformer import PerceptionTransformer
-from .transformer.encoders import BEVFormerEncoder, BEVFormerLayer
-from .transformer.temporal_self_attention import TemporalSelfAttention
-from .transformer.spatial_cross_attention import SpatialCrossAttention
-from .decoder.detr_decoder import DetectionTransformerDecoder
+from .transformer.encoder.encoders import BEVFormerEncoder
+from .transformer.encoder.bevformer_layer import BEVFormerLayer
+from .transformer.encoder.temporal_self_attention import TemporalSelfAttention
+from .transformer.encoder.spatial_cross_attention import SpatialCrossAttention
+from .transformer.encoder.ms_deform_attn_3d import MSDeformableAttention3D
+from .transformer.decoder.detr_decoder import DetectionTransformerDecoder
+from .transformer.decoder.custom_base_transformer_layer import CustomMSDeformableAttention
 from .bbox.assigner import HungarianAssigner3D
 from .bbox.coder import NMSFreeCoder
+from .utils.grid_mask import GridMask
 ```
+
+**Note**: `LearnedPositionalEncoding` is imported from `mmdet.models.utils.positional_encoding` for backward compatibility.
 
 ---
 
@@ -205,7 +213,7 @@ from .bbox.coder import NMSFreeCoder
 
 ---
 
-### 5. `bevformer/models/transformer/encoders.py`
+### 5. `bevformer/models/transformer/encoder/encoders.py`
 
 **Purpose**: BEVFormer encoder that stacks multiple encoder layers
 
@@ -242,34 +250,36 @@ from .bbox.coder import NMSFreeCoder
 
 ---
 
-### 6. `bevformer/models/transformer/custom_base_transformer_layer.py`
+### 5a. `bevformer/models/transformer/encoder/bevformer_layer.py`
 
-**Purpose**: Custom base transformer layer that supports flexible attention configuration
+**Purpose**: Single BEVFormer encoder layer containing TSA and SCA
 
 **Inheritance**: `BaseTransformerLayer` (MMCV) or custom base class
 
 **Key Responsibilities**:
-1. **Flexible Operation Order**
-   - Support custom operation order: `('self_attn', 'norm', 'cross_attn', 'norm', 'ffn', 'norm')`
-   - Allow different attention configurations for self-attention and cross-attention
+1. **Layer Composition**
+   - Contains temporal self-attention (TSA)
+   - Contains spatial cross-attention (SCA)
+   - Contains feedforward network (FFN) and layer normalization
 
-2. **Layer Configuration**
-   - Configure TSA as self-attention (`attn_cfgs[0]`)
-   - Configure SCA as cross-attention (`attn_cfgs[1]`)
-   - Support feedforward network (FFN) and layer normalization
+2. **Forward Pass**
+   - Apply TSA to fuse temporal information
+   - Apply SCA to aggregate multi-view image features
+   - Apply FFN for feature transformation
 
 **Key Methods**:
-- `forward(query, key, value, ...)`: Forward pass with flexible operation order
+- `forward(bev_query, key, value, *args, bev_pos=None, query_pos=None, ref_2d=None, ref_3d=None, bev_h=None, bev_w=None, reference_points_cam=None, mask=None, prev_bev=None, ...)`: Forward through single layer
 
 **Key Attributes**:
-- `operation_order`: Tuple specifying the order of operations
-- `attn_cfgs`: List of attention configurations (TSA and SCA)
+- `attentions`: List containing TSA and SCA modules
+- `ffns`: Feedforward network
+- `norms`: Layer normalization modules
 
-**Reference**: Original implementation in `BEVFormer-master/projects/mmdet3d_plugin/bevformer/modules/custom_base_transformer_layer.py`
+**Reference**: Original implementation in `BEVFormer-master/projects/mmdet3d_plugin/bevformer/modules/encoder.py`
 
 ---
 
-### 7. `bevformer/models/transformer/temporal_self_attention.py`
+### 6. `bevformer/models/transformer/encoder/temporal_self_attention.py`
 
 **Purpose**: Temporal self-attention that fuses current BEV with historical BEV
 
@@ -299,7 +309,7 @@ from .bbox.coder import NMSFreeCoder
 
 ---
 
-### 8. `bevformer/models/transformer/spatial_cross_attention.py`
+### 7. `bevformer/models/transformer/encoder/spatial_cross_attention.py`
 
 **Purpose**: Spatial cross-attention that aggregates information from multi-camera images to BEV
 
@@ -330,7 +340,7 @@ from .bbox.coder import NMSFreeCoder
 
 ---
 
-### 9. `bevformer/models/transformer/ms_deform_attn_3d.py`
+### 8. `bevformer/models/transformer/encoder/ms_deform_attn_3d.py`
 
 **Purpose**: Multi-scale deformable attention implementation for 3D BEV space
 
@@ -360,7 +370,7 @@ from .bbox.coder import NMSFreeCoder
 
 ---
 
-### 10. `bevformer/models/decoder/detr_decoder.py`
+### 9. `bevformer/models/transformer/decoder/detr_decoder.py`
 
 **Purpose**: DETR-style decoder for object detection
 
@@ -389,7 +399,35 @@ from .bbox.coder import NMSFreeCoder
 
 ---
 
-### 11. `bevformer/models/bbox/assigner.py`
+### 9a. `bevformer/models/transformer/decoder/custom_base_transformer_layer.py`
+
+**Purpose**: Custom base transformer layer for decoder that supports flexible attention configuration
+
+**Inheritance**: `BaseTransformerLayer` (MMCV) or custom base class
+
+**Key Responsibilities**:
+1. **Flexible Operation Order**
+   - Support custom operation order: `('self_attn', 'norm', 'cross_attn', 'norm', 'ffn', 'norm')`
+   - Allow different attention configurations for self-attention and cross-attention
+
+2. **Layer Configuration**
+   - Configure self-attention for object queries
+   - Configure cross-attention between queries and BEV features
+   - Support feedforward network (FFN) and layer normalization
+
+**Key Methods**:
+- `forward(query, key, value, ...)`: Forward pass with flexible operation order
+
+**Key Attributes**:
+- `operation_order`: Tuple specifying the order of operations
+- `attn_cfgs`: List of attention configurations
+- `class_name`: `CustomMSDeformableAttention` for registration
+
+**Reference**: Original implementation in `BEVFormer-master/projects/mmdet3d_plugin/bevformer/modules/custom_base_transformer_layer.py`
+
+---
+
+### 10. `bevformer/models/bbox/assigner.py`
 
 **Purpose**: Hungarian matcher for assigning predictions to ground truth boxes
 
@@ -419,7 +457,7 @@ from .bbox.coder import NMSFreeCoder
 
 ---
 
-### 12. `bevformer/models/bbox/coder.py`
+### 11. `bevformer/models/bbox/coder.py`
 
 **Purpose**: Bounding box encoder/decoder for 3D detection
 
@@ -448,24 +486,9 @@ from .bbox.coder import NMSFreeCoder
 
 ---
 
-### 13. `bevformer/models/utils/focal.py`
+### 12. `bevformer/models/utils/grid_mask.py`
 
-**Purpose**: Focal loss implementation for classification
-
-**Key Responsibilities**:
-1. **Focal Loss Computation**
-   - Implement sigmoid focal loss
-   - Handle class imbalance
-   - Support alpha and gamma parameters
-
-**Key Functions**:
-- `sigmoid_focal_loss(pred, target, alpha=0.25, gamma=2.0, reduction='mean')`: Compute focal loss
-
-**Reference**: Standard focal loss implementation (Lin et al., 2017)
-
----
-
-### 14. `bevformer/models/utils/grid_mask.py`
+**Note**: Focal loss is implemented in MMDetection (`mmdet.models.losses.FocalLoss`) and is used directly from there, not as a separate utility file.
 
 **Purpose**: GridMask data augmentation for images
 
@@ -527,9 +550,6 @@ from .bbox.coder import NMSFreeCoder
 
 ## Implementation Notes
 
-- All modules should support both training and inference modes
-- Handle FP16 training if needed (`auto_fp16` decorators)
-- Ensure compatibility with MMDetection/MMDetection3D framework
+- Ensure compatibility with MMCV/MMDetection/MMDetection3D framework
 - Register modules with appropriate registries (`DETECTORS`, `HEADS`, `TRANSFORMER`, etc.)
-- Follow the original BEVFormer architecture for compatibility
 

@@ -281,13 +281,12 @@ log_config = dict(
             reset_flag=False,  # Don't reset metrics after logging
             interval_exp_name=False,  # Don't include experiment name in log
         ),
-        # TensorboardLoggerHook disabled due to setuptools compatibility issue
-        # To enable: upgrade tensorboard: pip install --upgrade tensorboard
-        # dict(type='TensorboardLoggerHook')
+        # TensorboardLoggerHook
+        dict(type='TensorboardLoggerHook')
     ])
 
 # Checkpoint configuration
-checkpoint_config = dict(interval=1)
+checkpoint_config = dict(interval=1, max_keep_ckpts=4, save_last=True)
 
 # Workflow configuration
 # Format: [('train', 1)] for training only, [('train', 1), ('val', 1)] for train+val

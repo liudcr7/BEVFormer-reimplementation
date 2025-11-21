@@ -1,13 +1,13 @@
-# BEVFormer-from-scratch (OpenMMLab 1.x)
+# BEVFormer (OpenMMLab 1.x)
 
 This repo aims to re-implement BEVFormer from scratch, aligned with the original design.
 - Config: `configs/config.py`
-- Framework: MMCV 1.x / MMDet 2.x / MMDet3D 1.x
+- Framework: MMCV 1.6.0 / MMDet 2.28.2 / MMDet3D 1.0.0rc6
 
 ## Quick Start
 ```bash
 
-
+ENV for A100
 conda create -n open-mmlab python=3.8 -y
 conda activate open-mmlab
 
@@ -36,3 +36,6 @@ python tools/train.py configs/config.py
 CUDA_VISIBLE_DEVICES=0,1 torchrun --nproc_per_node=2 --master_port=29500 tools/train.py configs/config.py --launcher pytorch
 
 python tools/eval.py configs/config.py work_dirs/xxx/epoch_X.pth --eval bbox
+
+ENV for H800(sm90)
+shit
