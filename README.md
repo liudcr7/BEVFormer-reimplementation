@@ -1,6 +1,6 @@
 # BEVFormer (OpenMMLab 1.x)
 
-This repo aims to re-implement BEVFormer from scratch, aligned with the original design.
+This repo aims to re-implement BEVFormer model part from scratch, aligned with the original design.
 - Config: `configs/config.py`
 - Framework: MMCV 1.6.0 / MMDet 2.28.2 / MMDet3D 1.0.0rc6
 
@@ -38,4 +38,38 @@ CUDA_VISIBLE_DEVICES=0,1 torchrun --nproc_per_node=2 --master_port=29500 tools/t
 python tools/eval.py configs/config.py work_dirs/xxx/epoch_X.pth --eval bbox
 
 ENV for H800(sm90)
-shit
+# Similar setup as A100, but may require different CUDA version for sm_90 architecture
+```
+
+## Implementation Details
+
+### Memory Consumption
+
+This implementation consumes more GPU memory compared to the original BEVFormer, primarily due to the following reasons:
+
+1. **Pure PyTorch Implementation without CUDA Extensions**
+   - Multi-Scale Deformable Attention is implemented in pure PyTorch using `grid_sample` for bilinear interpolation
+   - While the pure PyTorch implementation is more portable, it consumes more memory and runs slower compared to CUDA kernel implementations
+
+2. **FP16 Mixed Precision Training Not Enabled**
+   - Although we built FP16 support (`@auto_fp16` decorators), it is disabled by default (`fp16_enabled = False`)
+   - All computations use FP32 precision, which approximately doubles memory consumption compared to FP16 training
+
+3. **Actual Memory Usage**
+   - **A100 (40GB)**: Can only run with BEV size of 120×120
+   - **H800 (80GB)**: Requires approximately 55512MiB (~54GB) memory to run with BEV size of 200×200
+
+### Training 
+
+1. **V1.0-mini**
+   - Due to the small dataset size, model performance is significantly worse compared to training on the full dataset
+   
+   ![BEV Visualization](result/bev120x120-bs1-epoch24-mini/a98fba72bde9433fb882032d18aedb2e_bev.png)
+   ![Camera View](result/bev120x120-bs1-epoch24-mini/a98fba72bde9433fb882032d18aedb2e_camera.png)
+
+
+2. **V1.0-trainval**
+   - The original paper trains for 24 epochs on the full dataset
+   - Limited by computational resources, this implementation can train for at most 8 epochs
+
+
