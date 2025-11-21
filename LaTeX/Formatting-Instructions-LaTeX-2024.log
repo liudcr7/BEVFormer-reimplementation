@@ -1,0 +1,221 @@
+This is pdfTeX, Version 3.141592653-2.6-1.40.28 (TeX Live 2025) (preloaded format=pdflatex 2025.10.26)  21 NOV 2025 13:06
+entering extended mode
+ restricted \write18 enabled.
+ file:line:error style messages enabled.
+ %&-line parsing enabled.
+**d:/GitRepos/BEVFormer-reimplementation/LaTeX/Formatting-Instructions-LaTeX-2024.tex
+(d:/GitRepos/BEVFormer-reimplementation/LaTeX/Formatting-Instructions-LaTeX-2024.tex
+LaTeX2e <2025-06-01> patch level 1
+L3 programming layer <2025-10-09>
+(d:/Tools/texlive/2025/texmf-dist/tex/latex/base/article.cls
+Document Class: article 2025/01/22 v1.4n Standard LaTeX document class
+(d:/Tools/texlive/2025/texmf-dist/tex/latex/base/size10.clo
+File: size10.clo 2025/01/22 v1.4n Standard LaTeX file (size option)
+)
+\c@part=\count275
+\c@section=\count276
+\c@subsection=\count277
+\c@subsubsection=\count278
+\c@paragraph=\count279
+\c@subparagraph=\count280
+\c@figure=\count281
+\c@table=\count282
+\abovecaptionskip=\skip49
+\belowcaptionskip=\skip50
+\bibindent=\dimen148
+) (./aaai24.sty
+Package: aaai24 2023/06/26 AAAI 2024 Submission format
+
+Conference Style for AAAI for LaTeX 2e -- version for submission
+\titlebox=\skip51
+) (d:/Tools/texlive/2025/texmf-dist/tex/latex/psnfss/times.sty
+Package: times 2020/03/25 PSNFSS-v9.3 (SPQR) 
+) (d:/Tools/texlive/2025/texmf-dist/tex/latex/psnfss/helvet.sty
+Package: helvet 2020/03/25 PSNFSS-v9.3 (WaS) 
+ (d:/Tools/texlive/2025/texmf-dist/tex/latex/graphics/keyval.sty
+Package: keyval 2022/05/29 v1.15 key=value parser (DPC)
+\KV@toks@=\toks17
+)) (d:/Tools/texlive/2025/texmf-dist/tex/latex/psnfss/courier.sty
+Package: courier 2020/03/25 PSNFSS-v9.3 (WaS) 
+) (d:/Tools/texlive/2025/texmf-dist/tex/latex/url/url.sty
+\Urlmuskip=\muskip17
+Package: url 2013/09/16  ver 3.4  Verb mode for urls, etc.
+) (d:/Tools/texlive/2025/texmf-dist/tex/latex/graphics/graphicx.sty
+Package: graphicx 2024/12/31 v1.2e Enhanced LaTeX Graphics (DPC,SPQR)
+ (d:/Tools/texlive/2025/texmf-dist/tex/latex/graphics/graphics.sty
+Package: graphics 2024/08/06 v1.4g Standard LaTeX Graphics (DPC,SPQR)
+ (d:/Tools/texlive/2025/texmf-dist/tex/latex/graphics/trig.sty
+Package: trig 2023/12/02 v1.11 sin cos tan (DPC)
+) (d:/Tools/texlive/2025/texmf-dist/tex/latex/graphics-cfg/graphics.cfg
+File: graphics.cfg 2016/06/04 v1.11 sample graphics configuration
+)
+Package graphics Info: Driver file: pdftex.def on input line 106.
+ (d:/Tools/texlive/2025/texmf-dist/tex/latex/graphics-def/pdftex.def
+File: pdftex.def 2025/09/29 v1.2d Graphics/color driver for pdftex
+))
+\Gin@req@height=\dimen149
+\Gin@req@width=\dimen150
+) (d:/Tools/texlive/2025/texmf-dist/tex/latex/natbib/natbib.sty
+Package: natbib 2010/09/13 8.31b (PWD, AO)
+\bibhang=\skip52
+\bibsep=\skip53
+LaTeX Info: Redefining \cite on input line 694.
+\c@NAT@ctr=\count283
+) (d:/Tools/texlive/2025/texmf-dist/tex/latex/caption/caption.sty
+Package: caption 2023/08/05 v3.6o Customizing captions (AR)
+ (d:/Tools/texlive/2025/texmf-dist/tex/latex/caption/caption3.sty
+Package: caption3 2023/07/31 v2.4d caption3 kernel (AR)
+\caption@tempdima=\dimen151
+\captionmargin=\dimen152
+\caption@leftmargin=\dimen153
+\caption@rightmargin=\dimen154
+\caption@width=\dimen155
+\caption@indent=\dimen156
+\caption@parindent=\dimen157
+\caption@hangindent=\dimen158
+Package caption Info: Standard document class detected.
+)
+\c@caption@flags=\count284
+\c@continuedfloat=\count285
+) (d:/Tools/texlive/2025/texmf-dist/tex/latex/algorithms/algorithm.sty
+Package: algorithm 2009/08/24 v0.1 Document Style `algorithm' - floating environment
+ (d:/Tools/texlive/2025/texmf-dist/tex/latex/float/float.sty
+Package: float 2001/11/08 v1.3d Float enhancements (AL)
+\c@float@type=\count286
+\float@exts=\toks18
+\float@box=\box53
+\@float@everytoks=\toks19
+\@floatcapt=\box54
+) (d:/Tools/texlive/2025/texmf-dist/tex/latex/base/ifthen.sty
+Package: ifthen 2024/03/16 v1.1e Standard LaTeX ifthen package (DPC)
+)
+\@float@every@algorithm=\toks20
+\c@algorithm=\count287
+) (d:/Tools/texlive/2025/texmf-dist/tex/latex/algorithms/algorithmic.sty
+Package: algorithmic 2009/08/24 v0.1 Document Style `algorithmic'
+\c@ALC@unique=\count288
+\c@ALC@line=\count289
+\c@ALC@rem=\count290
+\c@ALC@depth=\count291
+\ALC@tlm=\skip54
+\algorithmicindent=\skip55
+) (d:/Tools/texlive/2025/texmf-dist/tex/latex/newfloat/newfloat.sty
+Package: newfloat 2023/10/01 v1.2 Defining new floating environments (AR)
+) (d:/Tools/texlive/2025/texmf-dist/tex/latex/listings/listings.sty
+\lst@mode=\count292
+\lst@gtempboxa=\box55
+\lst@token=\toks21
+\lst@length=\count293
+\lst@currlwidth=\dimen159
+\lst@column=\count294
+\lst@pos=\count295
+\lst@lostspace=\dimen160
+\lst@width=\dimen161
+\lst@newlines=\count296
+\lst@lineno=\count297
+\lst@maxwidth=\dimen162
+ (d:/Tools/texlive/2025/texmf-dist/tex/latex/listings/lstpatch.sty
+File: lstpatch.sty 2024/09/23 1.10c (Carsten Heinz)
+) (d:/Tools/texlive/2025/texmf-dist/tex/latex/listings/lstmisc.sty
+File: lstmisc.sty 2024/09/23 1.10c (Carsten Heinz)
+\c@lstnumber=\count298
+\lst@skipnumbers=\count299
+\lst@framebox=\box56
+) (d:/Tools/texlive/2025/texmf-dist/tex/latex/listings/listings.cfg
+File: listings.cfg 2024/09/23 1.10c listings configuration
+))
+Package: listings 2024/09/23 1.10c (Carsten Heinz)
+\@float@every@listing=\toks22
+\c@listing=\count300
+LaTeX Font Info:    Trying to load font information for OT1+ptm on input line 114.
+ (d:/Tools/texlive/2025/texmf-dist/tex/latex/psnfss/ot1ptm.fd
+File: ot1ptm.fd 2001/06/04 font definitions for OT1/ptm.
+) (d:/Tools/texlive/2025/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
+File: l3backend-pdftex.def 2025-10-09 L3 backend support: PDF output (pdfTeX)
+\l__color_backend_stack_int=\count301
+) (./Formatting-Instructions-LaTeX-2024.aux)
+\openout1 = `Formatting-Instructions-LaTeX-2024.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 114.
+LaTeX Font Info:    ... okay on input line 114.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 114.
+LaTeX Font Info:    ... okay on input line 114.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 114.
+LaTeX Font Info:    ... okay on input line 114.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 114.
+LaTeX Font Info:    ... okay on input line 114.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 114.
+LaTeX Font Info:    ... okay on input line 114.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 114.
+LaTeX Font Info:    ... okay on input line 114.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 114.
+LaTeX Font Info:    ... okay on input line 114.
+ (d:/Tools/texlive/2025/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
+[Loading MPS to PDF converter (version 2006.09.02).]
+\scratchcounter=\count302
+\scratchdimen=\dimen163
+\scratchbox=\box57
+\nofMPsegments=\count303
+\nofMParguments=\count304
+\everyMPshowfont=\toks23
+\MPscratchCnt=\count305
+\MPscratchDim=\dimen164
+\MPnumerator=\count306
+\makeMPintoPDFobject=\count307
+\everyMPtoPDFconversion=\toks24
+) (d:/Tools/texlive/2025/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
+Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
+Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 485.
+ (d:/Tools/texlive/2025/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg
+File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Live
+))
+Package caption Info: Begin \AtBeginDocument code.
+Package caption Info: float package is loaded.
+Package caption Info: listings package is loaded.
+Package caption Info: End \AtBeginDocument code.
+Package newfloat Info: `float' package detected.
+\c@lstlisting=\count308
+\c@eqfn=\count309
+\titlearea=\box58
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <12> on input line 116.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <8> on input line 116.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <6> on input line 116.
+LaTeX Font Info:    Trying to load font information for OT1+pcr on input line 116.
+ (d:/Tools/texlive/2025/texmf-dist/tex/latex/psnfss/ot1pcr.fd
+File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
+)
+\actualheight=\skip56
+ (./0. Abstract.tex) (./1. Introduction.tex) (./2. Related Work.tex) (./3. Methodology.tex) (./4. Evaluation.tex) (./5. Conclusion.tex) (./Formatting-Instructions-LaTeX-2024.bbl)
+
+
+
+[1{d:/Tools/texlive/2025/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{d:/Tools/texlive/2025/texmf-dist/fonts/enc/dvips/base/8r.enc}
+
+
+
+
+] (./Formatting-Instructions-LaTeX-2024.aux)
+ ***********
+LaTeX2e <2025-06-01> patch level 1
+L3 programming layer <2025-10-09>
+ ***********
+ ) 
+Here is how much of TeX's memory you used:
+ 5160 strings out of 467747
+ 85273 string characters out of 5427994
+ 488539 words of memory out of 5000000
+ 33800 multiletter control sequences out of 15000+600000
+ 641718 words of font info for 65 fonts, out of 8000000 for 9000
+ 1141 hyphenation exceptions out of 8191
+ 57i,10n,65p,376b,416s stack positions out of 10000i,1000n,20000p,200000b,200000s
+<d:/Tools/texlive/2025/texmf-dist/fonts/type1/urw/courier/ucrb8a.pfb><d:/Tools/texlive/2025/texmf-dist/fonts/type1/urw/times/utmb8a.pfb><d:/Tools/texlive/2025/texmf-dist/fonts/type1/urw/times/utmr8a.pfb><d:/Tools/texlive/2025/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
+Output written on Formatting-Instructions-LaTeX-2024.pdf (1 page, 44589 bytes).
+PDF statistics:
+ 29 PDF objects out of 1000 (max. 8388607)
+ 17 compressed objects within 1 object stream
+ 0 named destinations out of 1000 (max. 500000)
+ 1 words of extra memory for PDF output out of 10000 (max. 10000000)
+
