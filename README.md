@@ -63,7 +63,7 @@ This implementation consumes more GPU memory compared to the original BEVFormer,
 
 1. **V1.0-mini**
    - Due to the small dataset size, model performance is significantly worse compared to training on the full dataset
-   
+   （blue is the prediction result, green is the groundtruth）
    ![BEV Visualization](result/bev120x120-bs1-epoch24-mini/a98fba72bde9433fb882032d18aedb2e_bev.png)
    ![Camera View](result/bev120x120-bs1-epoch24-mini/a98fba72bde9433fb882032d18aedb2e_camera.png)
 
