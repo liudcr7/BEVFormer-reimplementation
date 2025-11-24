@@ -94,7 +94,7 @@ This implementation consumes more GPU memory compared to the original BEVFormer,
 
    - And this is one example:
    ![BEV Visualization](result\bev200x200-bs1-epoch7\img\f7d75d25c86941f3aecfed9efea1a3e3_bev.png)
-   ![Camera View](result\bev200x200-bs1-epoch7\img\f7d75d25c86941f3aecfed9efea1a3e3_camera.png)
+   ![Camera View](result/bev200x200-bs1-epoch7/img/f7d75d25c86941f3aecfed9efea1a3e3_camera.png)
    We can see that the model is quite precise in x and y, but z still need to learn.
 
 
