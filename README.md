@@ -64,15 +64,15 @@ This implementation consumes more GPU memory compared to the original BEVFormer,
 1. **V1.0-mini**
    - Due to the small dataset size, model performance is significantly worse compared to training on the full dataset
    （blue is the prediction result, green is the groundtruth）
-   ![BEV Visualization](result\bev120x120-bs1-epoch24-mini\img\a98fba72bde9433fb882032d18aedb2e_bev.png)
-   ![Camera View](result\bev120x120-bs1-epoch24-mini\img\a98fba72bde9433fb882032d18aedb2e_camera.png)
+   ![BEV Visualization](result/bev120x120-bs1-epoch24-mini/img/a98fba72bde9433fb882032d18aedb2e_bev.png)
+   ![Camera View](result/bev120x120-bs1-epoch24-mini/img/a98fba72bde9433fb882032d18aedb2e_camera.png)
 
 
 2. **V1.0-trainval**
    - The original paper trains for 24 epochs on the full dataset
    - Limited by computational resources, this implementation only train for 7 epochs：
-   ![Learning rate](result\bev200x200-bs1-epoch7\lr.png)
-   ![Loss](result\bev200x200-bs1-epoch7\loss.png)  
+   ![Learning rate](result/bev200x200-bs1-epoch7/lr.png)
+   ![Loss](result/bev200x200-bs1-epoch7/loss.png)  
    - The result:
 
      | mAP | mATE | mASE | mAOE | mAVE | mAAE | NDS |
@@ -93,7 +93,7 @@ This implementation consumes more GPU memory compared to the original BEVFormer,
      | barrier | 0.326 | 0.986 | 0.890 | 1.310 | nan | nan |
 
    - And this is one example:
-   ![BEV Visualization](result\bev200x200-bs1-epoch7\img\f7d75d25c86941f3aecfed9efea1a3e3_bev.png)
+   ![BEV Visualization](result/bev200x200-bs1-epoch7/img/f7d75d25c86941f3aecfed9efea1a3e3_bev.png)
    ![Camera View](result/bev200x200-bs1-epoch7/img/f7d75d25c86941f3aecfed9efea1a3e3_camera.png)
    We can see that the model is quite precise in x and y, but z still need to learn.
 
