@@ -64,15 +64,37 @@ This implementation consumes more GPU memory compared to the original BEVFormer,
 1. **V1.0-mini**
    - Due to the small dataset size, model performance is significantly worse compared to training on the full dataset
    （blue is the prediction result, green is the groundtruth）
-   ![BEV Visualization](result/bev120x120-bs1-epoch24-mini/a98fba72bde9433fb882032d18aedb2e_bev.png)
-   ![Camera View](result/bev120x120-bs1-epoch24-mini/a98fba72bde9433fb882032d18aedb2e_camera.png)
+   ![BEV Visualization](result\bev120x120-bs1-epoch24-mini\img\a98fba72bde9433fb882032d18aedb2e_bev.png)
+   ![Camera View](result\bev120x120-bs1-epoch24-mini\img\a98fba72bde9433fb882032d18aedb2e_camera.png)
 
 
 2. **V1.0-trainval**
    - The original paper trains for 24 epochs on the full dataset
-   - Limited by computational resources, this implementation only train for 7 epochs
-   ![BEV Visualization](result/bev200x200-bs1-epoch7/f7d75d25c86941f3aecfed9efea1a3e3_bev.png)
-   ![Camera View](result/bev200x200-bs1-epoch7/f7d75d25c86941f3aecfed9efea1a3e3_camera.png)
+   - Limited by computational resources, this implementation only train for 7 epochs：
+   ![Learning rate](result\bev200x200-bs1-epoch7\lr.png)
+   ![Loss](result\bev200x200-bs1-epoch7\loss.png)  
+   - The result:
+
+     | mAP | mATE | mASE | mAOE | mAVE | mAAE | NDS |
+     |-----|------|------|------|------|------|-----|
+     | 0.2408 | 1.1082 | 0.7151 | 1.5707 | 0.5132 | 0.2109 | 0.2765 |
+
+     | Class | AP | ATE | ASE | AOE | AVE | AAE |
+     |-------|----|-----|-----|-----|-----|-----|
+     | car | 0.361 | 1.115 | 0.751 | 1.618 | 0.399 | 0.201 |
+     | truck | 0.211 | 1.209 | 0.792 | 1.624 | 0.498 | 0.221 |
+     | bus | 0.265 | 1.116 | 0.860 | 1.582 | 1.173 | 0.363 |
+     | trailer | 0.073 | 1.147 | 0.845 | 1.634 | 0.367 | 0.189 |
+     | construction_vehicle | 0.049 | 1.331 | 0.726 | 1.490 | 0.146 | 0.317 |
+     | pedestrian | 0.330 | 1.050 | 0.332 | 1.602 | 0.433 | 0.193 |
+     | motorcycle | 0.240 | 1.046 | 0.801 | 1.541 | 0.813 | 0.191 |
+     | bicycle | 0.223 | 1.074 | 0.816 | 1.735 | 0.276 | 0.013 |
+     | traffic_cone | 0.330 | 1.009 | 0.338 | nan | nan | nan |
+     | barrier | 0.326 | 0.986 | 0.890 | 1.310 | nan | nan |
+
+   - And this is one example:
+   ![BEV Visualization](result\bev200x200-bs1-epoch7\img\f7d75d25c86941f3aecfed9efea1a3e3_bev.png)
+   ![Camera View](result\bev200x200-bs1-epoch7\img\f7d75d25c86941f3aecfed9efea1a3e3_camera.png)
    We can see that the model is quite precise in x and y, but z still need to learn.
 
 
