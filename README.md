@@ -62,6 +62,10 @@ This implementation consumes more GPU memory compared to the original BEVFormer,
 ### Training 
 
 1. **V1.0-mini**
+   - Eval command:
+     ```bash
+     python tools/eval.py configs/config120.py work_dirs/config120/epoch_24.pth --eval bbox
+     ```
    - Due to the small dataset size, model performance is significantly worse compared to training on the full dataset
    （blue is the prediction result, green is the groundtruth）
    ![BEV Visualization](result/bev120x120-bs1-epoch24-mini/img/a98fba72bde9433fb882032d18aedb2e_bev.png)
@@ -69,6 +73,10 @@ This implementation consumes more GPU memory compared to the original BEVFormer,
 
 
 2. **V1.0-trainval**
+   - Eval command:
+     ```bash
+     python tools/eval.py configs/config200.py work_dirs/config200/epoch_7.pth --eval bbox
+     ```
    - The original paper trains for 24 epochs on the full dataset
    - Limited by computational resources, this implementation only train for 7 epochs：
    ![Learning rate](result/bev200x200-bs1-epoch7/lr.png)
