@@ -2,7 +2,7 @@
 
 This repo aims to re-implement BEVFormer model part from scratch, aligned with the original design.
 - Config: `configs/config.py`
-- Framework: MMCV 1.6.0 / MMDet 2.28.2 / MMDet3D 1.0.0rc6
+- Framework: MMCV 1.6.0 / MMDet 2.28.2 / MMDet3D 1.0.0rc6 （Must be the same!!!）
 
 ## Quick Start
 ```bash
